@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🤖 Guided Cell
+# 🤖 Floor Truth
 
 ### Claude runs a two-arm robot cell, guided by the cameras
 
