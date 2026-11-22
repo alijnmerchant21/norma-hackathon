@@ -510,5 +510,5 @@ Sources: the two generated run reports in [`guided_cell/demo/`](guided_cell/demo
 
 | | Link |
 |---|---|
-| ▶️ **Demo video (YouTube)** | <!-- TODO: replace with the YouTube link --> [Watch on YouTube](https://www.youtube.com/watch?v=VIDEO_ID) |
+| ▶️ **Demo video (YouTube)** | [Watch on YouTube](https://youtu.be/ZloNZSeLTS0) |
 | 📊 **Presentation (PPT)** | [Open the slides on Google Drive](https://drive.google.com/file/d/1LY4g5pFA6ymW-YgKfHhIrpc6gZL6sHvW/view?usp=share_link) |
