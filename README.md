@@ -100,7 +100,8 @@ The cell combines three code drops without modifying them:
 - **vision.py** (Manasa): box and hole detection, tracker.
 - **elrobot_ik** (Max): kinematics and calibration.
 
-The SO-101 loader runs two **SmolVLA** policies, one for load and one for unload, trained by **Sai Akash**.
+The SO-101 loader runs two **SmolVLA** policies, one for load and one for unload, trained on demonstration data
+collected by **Sai Akash**.
 
 The new integration package is `cellguide/`.
 
@@ -485,7 +486,7 @@ Sources: the two generated run reports in [`guided_cell/demo/`](guided_cell/demo
 | **Max** | ElRobot kinematics and calibration (`elrobot_ik`, external) · integration package `cellguide/`, policy runner, demo tools (commit author) |
 | **Ali** | `cellbot`: guarded cell, Station backend, simulator, e-stop, teach tool, MCP server, Claude orchestrator |
 | **Manasa** | Computer vision: `vision.py`, hole tracker, HTTP server, calibration and capture tools |
-| **Sai Akash** | SmolVLA loader policies for the SO-101 |
+| **Sai Akash** | Collected the SO-101 demonstration data used to train the SmolVLA load and unload policies |
 
 ---
 
