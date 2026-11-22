@@ -100,6 +100,8 @@ The cell combines three code drops without modifying them:
 - **vision.py** (Manasa): box and hole detection, tracker.
 - **elrobot_ik** (Max): kinematics and calibration.
 
+The SO-101 loader runs two **SmolVLA** policies, one for load and one for unload, trained by **Sai Akash**.
+
 The new integration package is `cellguide/`.
 
 ---
