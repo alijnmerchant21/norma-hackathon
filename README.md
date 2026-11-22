@@ -205,16 +205,6 @@ flowchart LR
 - **Learning.** `learn.py` keeps a **local** correction per lid position. It learns the arm's own error, not the
   raw miss, so repeated runs converge instead of winding up. Marks from a box that slid are excluded.
 
-<p align="center">
-<img src="docs/images/mark_check_84dbf0.jpg" alt="Two real top-camera crops of part 84dbf0: before the dabs with the holes ringed and numbered, and after with hole 3's measured miss of 8.5 mm drawn and stray dark changes circled in orange" width="640"><br>
-<sub>Real mark check on part <code>84dbf0</code>. Left: the hole positions at the moment of each dab. Right: hole 3 measured at 8.5 mm. The box rotated and shifted while being touched, so the marks on holes 0 and 1 were not found. Orange circles are dark changes that match no hole.</sub>
-</p>
-
-<p align="center">
-<img src="docs/images/learning_simulated.png" alt="Line chart of mean miss per run over 12 simulated runs: 6.6 mm on run 1, about 1.2 mm from run 2 on, with the worst hole shaded" width="640"><br>
-<sub><b>Simulated, not a cell result.</b> The real <code>learn.py</code> model with default settings, run 12 times on a simulated 4-hole part. Mean miss falls from 6.6 mm to about 1.2 mm and stays there. Shaded: worst hole per run.</sub>
-</p>
-
 ---
 
 ## 🦾 Loader and the data flywheel
@@ -474,18 +464,6 @@ Sources: the two generated run reports in [`guided_cell/demo/`](guided_cell/demo
   - every policy loader attempt got a camera label;
   - after the primary unload failed, Claude ran the fallback.
 - **Measured marks.** The day's chart lists 12 measured marks with misses from **0.4 to 18.1 mm**.
-
-<p align="center">
-<img src="docs/images/touch_height_error.png" alt="Scatter chart of touch-height error per dab across 22 Nov: errors up to 15 mm at 09:17, then almost all below 3 mm after closed-loop height control at 10:15, with two dabs refused by the 3.5 mm guard" width="900"><br>
-<sub>Touch-height error per real dab on 22 Nov. Before closed-loop height control (10:15) errors reached 15 mm. After it, most dabs stayed within 3 mm. Ringed: refused by the 3.5 mm guard.</sub>
-</p>
-
-<p align="center">
-<img src="docs/images/miss_per_mark.png" alt="Scatter chart of the 12 measured mark misses on 22 Nov, from 0.4 to 18.1 mm, against the 3 mm tolerance line" width="900"><br>
-<sub>The 12 measured marks of the day against the 3 mm tolerance. Filled: kept for learning. Ringed: excluded because the box slid, or an outlier.</sub>
-</p>
-
-<sub>Both charts come from the run reports in <code>guided_cell/demo/</code>.</sub>
 
 **🚧 Not working yet**
 
