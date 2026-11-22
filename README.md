@@ -13,9 +13,9 @@
 ![SmolVLA](https://img.shields.io/badge/SmolVLA-loader%20policy-FFD21E)
 ![Status](https://img.shields.io/badge/status-hackathon%20prototype-orange)
 
-<img src="guided_cell/top_ref.jpg" alt="Top-camera view of the cell: the red box with four drawn holes and a reference line in the middle of the taped work area, the SO-101 on the left, the ElRobot holding a marker on the right" width="760">
+<img src="docs/images/ProjectImage.jpeg" alt="The guided cell at the hackathon: the black ElRobot holding a marker on the left, the white SO-101 on the right, the top-camera mount in the middle, and the red box with drawn holes on the taped table" width="900">
 
-<sub>The real cell, seen by the top camera. Red box with drawn holes in the taped work area · SO-101 loader (left) · ElRobot worker holding a marker (bottom right).</sub>
+<sub>The real cell at the hackathon. ElRobot worker holding the marker (left) · SO-101 loader (right) · top-camera mount (centre) · red box with drawn holes on the taped table.</sub>
 
 </div>
 
