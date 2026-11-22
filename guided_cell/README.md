@@ -1,7 +1,46 @@
-# guided_cell
+# guided_cell: Claude as the operator of a two-arm robot cell
 
-Camera-guided work on a part that may move, built on top of three existing code drops. Claude runs the cell
-as operator through MCP tools; every motion still goes through cellbot's guards.
+Built at the HackLab x BRISA Berlin Robotics & AI Hackathon (NormaCore track, 21-22 Nov 2026).
+
+## The idea
+
+Industrial guided-assembly cells (Inbolt and others) cost millions so that a robot can work on a part that is
+never in exactly the same place. We built the same loop with two low-cost arms, one top camera and Claude as
+the operator:
+
+1. **Holder arm (SO-101)** brings the part into the work area with a trained SmolVLA policy, deliberately
+   imprecise.
+2. **Camera** finds the part, its holes and its rotation. Hole ids stay fixed in the part's own frame, however
+   the box lies.
+3. **Claude** looks at the part, writes the program (which holes, in which order) at run time and checks it
+   before anything moves.
+4. **Worker arm (ElRobot)** marks each hole: camera pixel -> table point -> inverse kinematics -> guarded motion
+   through NormaCore Station.
+5. **Camera** measures every mark. The miss goes into a correction model, so the next part is aimed better
+   (data flywheel).
+6. **Holder arm** takes the part out. Every loader attempt is checked by the camera and labelled; successful
+   ones become new training episodes for the policy.
+
+Claude handles exceptions like a human operator would: a refused move, a hand in the cell, a failed load, a
+policy that needs a fallback or a hand-over to a human. Every motion still passes cellbot's safety guards, and
+a human approves it.
+
+## What we achieved on the real hardware (22 Nov 2026)
+
+- **The whole cell runs on NormaCore Station** with both arms, the top camera and Claude as operator through
+  MCP. 7 parts went through the cell, 5 of them through the full cycle load -> marking -> inspection -> unload,
+  each with its own log and run report (`demo/run_report_*.html`).
+- **Load by a trained SmolVLA policy: 5 of 6 attempts succeeded** (74-109 s each). The other attempt was
+  stopped by our own jump guard in `policy_run.py`.
+- **Camera-guided marking on a part placed at any angle.** A closed loop on the arm's measured tip keeps the
+  touch height mostly within +-1.5 mm of the target. The best marks landed 0.4-0.5 mm from the hole centre.
+- **The data flywheel is live.** Marks are found by comparing pictures before and after the dabs, the miss is
+  logged per hole and fed back as a learned aim correction on the next part. Loader attempts are labelled and
+  turned into time ranges of the Station recording for retraining.
+- **Claude as operator** writes and checks each program, narrates every step, labels every loader attempt,
+  logs exceptions for the human and latched the e-stop when it saw a hand on the box.
+- **Safety by design:** joint limits, speed caps, over-current freeze, latching e-stop, one arm in the work area
+  at a time, plus extra checks for computed targets (reach, clearance, sag, touch height).
 
 ## Data path
 
@@ -26,7 +65,10 @@ Files here: `guided.toml` (config), `cellguide/guided_cell.py` (the cell), `kin.
 `vision_source.py` (HTTP or in-process vision), `learn.py` (correction model), `loader.py` (so101
 loader), `alerts.py` (operator alerts), `server.py` (MCP server), `cli.py` (terminal CLI),
 `operator_prompt.py` (operator instructions), `teach_tool.py` (pen tip calibration), `preflight.py`
-(readiness checklist), `cell.guided.toml` (our cellbot config), `setup_mac.sh`, `tests/`, `TESTING.md`.
+(readiness checklist), `marks_dark.py` (mark measurement from before/after pictures), `cell.guided.toml` (our
+cellbot config), `policy_run.py` (runs the SmolVLA loader policies on the SO-101, see `POLICY.md`),
+`unload_hybrid.py` (taught approach + unload policy), `CLAUDE.md` (how Claude narrates a run), `demo/` (run
+reports and the report generator), `setup_mac.sh`, `tests/`, `TESTING.md`.
 
 ## Setup on the Mac
 
@@ -81,7 +123,9 @@ cellguide process open camera 2 itself (`CameraVision`): a background thread rea
 `[vision] width` x `height` (default 1280x720, a different aspect ratio is refused) and runs Manasa's
 `detect_scene` + `HoleTracker` on each one. Teammates can still watch at `http://<this machine>:8765/frame.jpg`
 (`/raw.jpg`, `/state`; `[vision] view_port`, 0 = off). The cellguide process owns the camera: do NOT run the
-standalone vision server on the same camera at the same time (the second one gets no frames). The venv's
+standalone vision server on the same camera at the same time (the second one gets no frames).
+`camera:auto` (the current setting) picks the camera whose picture matches `top_ref.jpg`, because macOS
+renumbers cameras when one drops out or comes back. The venv's
 OpenCV is headless, which is fine because no window is opened. Default stays `http://127.0.0.1:8765`.
 
 ## First use, in this order
@@ -94,10 +138,11 @@ d. Humans teach poses with `python -m cellbot.teach save <arm> <pose> <zone>`: `
    `elrobot home clear`, `elrobot look clear` (the arm fully out of the top camera's view).
 e. Set `[part] surface_height_mm` to the lid height, or better make a calibration touched at lid height and
    set it as `calib_file` (then `surface_height_mm = 0`).
-f. Tool: no pen. The worker touches each hole with its CLOSED gripper fingertips (the default tool point,
-   `elrobot_ik/tool_offset.json`, calibrated closed). `[tool] close_gripper = true` closes it before the first guided move.
-   `inspect_part` finds marks only if the tips carry ink (e.g. blue whiteboard marker) or a pen is mounted and
-   taught later (`cellguide.teach_tool`); without ink every target is `found: false` with a note, no data.
+f. Tool: a black marker held in the closed ElRobot gripper (`[tool] tip_local_m`: closed fingertips + 38 mm
+   stick-out). `[tool] close_gripper = true` closes the gripper before the first guided move. `inspect_part`
+   finds the new dots by comparing a picture taken before the dabs with one taken after (`[marks] method =
+   "diff"`) and saves `state/marks/<time>_<part>_{before,after,diff,result}`. The lid-height aim offset is
+   taught from measured dots and kept in `state/aim_lid.json`.
 g. Run preflight until it says READY.
 h. First run: `see_part`, `plan_program([{"hole": 0, "action": "hover"}])`, then the same with
    `run_program` at slow speed, with a hand near the power switch.
@@ -121,6 +166,10 @@ All cellbot tools stay available (`get_status`, `look`, `go_home`, `go_to_pose`,
 - `guided_status()`: set-up, tip position, droop correction, learning trend, active guard limits (`guards`).
 - `load_part()` / `unload_part()`: the so101 moves the part pickup -> work area / work area -> drop-off.
   Refused unless the elrobot is at a clear pose. Mode from `[loader]`, see below.
+- `finish_teleop(attempt_id)`: closes a hand-over in which a human moved the SO-101 with its leader arm.
+- `label_loader_attempt(success, note, attempt_id)`: the camera-checked result of a load or unload attempt.
+- `loader_stats()`: attempts, successes and success rate per phase and variant, plus the time ranges of the
+  successful attempts (new training episodes).
 - `alerts()`: what happened since the last call (cellbot events, vision events, accuracy metrics) as
   `{level, source, message, needs_human}`, plus metrics and a recommendation: `continue`,
   `check and continue` or `pause and ask a human`.
@@ -138,6 +187,13 @@ All cellbot tools stay available (`get_status`, `look`, `go_home`, `go_to_pose`,
   home automatically; otherwise it stays `unknown` and `go_home so101` is required (after a human looks).
 - `human`: no motion; a human places or removes the part, `new_part` / `see_part` verify.
 
+Current setup: load by the SmolVLA policy (`policies/load/final`), unload by a taught sweep-and-grasp sequence
+(`unload_mode = "taught"`). Variants per call: `primary`, `fallback` (taught approach and grasp, then the unload
+policy: the hybrid, like the sponge_pick project) and `teleop` (a human moves the SO-101 with its leader arm;
+the cell moves nothing until `finish_teleop`). Every attempt is logged in `state/loader_episodes.jsonl`. How to
+run and tune the policies: `POLICY.md`. The policy weights (1.2 GB each) are not in this repo; only their
+`config.json` is.
+
 ## Guard keys (`[motion]`)
 
 `workspace_margin_mm`, `clearance_mm`, `ik_tol_mm`, `settle_max_deg`, `sight_max_age_s` (a clear look older
@@ -152,7 +208,8 @@ height), `pretouch_mm` / `touch_tol_mm` / `touch_correct_rounds` / `touch_correc
   area, one motion at a time, waypoints with over-current checks.
 - Extra checks for computed targets: inside the calibrated marker area, IK error below `ik_tol_mm`, tip
   clearance along the path, no dip below the target on the way down, over-current while settling.
-- Vision is not a safety system. There is no hand detector yet. Keep a human at the power switch.
+- Vision is not a safety system. Claude checks every `see_part` image for hands or foreign objects and stops
+  the cell; a human stays at the power switch.
 - With the top camera alone the arm takes one clear look from home/look and works from it: the part is NOT
   watched while the arm is over it (the arm hides the lid, dark arm parts look like holes). A moved part is
   handled by looking again (`run --look`, or between runs). Following needs a camera that sees under the arm
@@ -178,18 +235,12 @@ height), `pretouch_mm` / `touch_tol_mm` / `touch_correct_rounds` / `touch_correc
   CLI `droop clear` zeroes the offset.
 - Only humans teach poses and release the e-stop. A human approves every motion call.
 
-## Known gaps
+## Next steps
 
-- Not yet run on hardware. Only the offline tests have run.
-- Lid height: needs a lid-height calibration, or measured `surface_height_mm` plus parallax numbers
-  (`camera_height_mm`, `camera_nadir_px`).
-- cellbot `limit_margin` vs joints that rest at 1-2 % of their range: the IK already stays inside the margin,
-  but taught poses must too, or cellbot refuses them.
-- Droop is measured from joint readings only: bending the encoders do not see is not corrected.
-- The wrist camera is not used yet for the last centimetre.
-- No unknown-object or hand detection.
-- Logging into Station/NormFS itself is not done. Logs are JSONL files in cellbot's state folder:
-  `guided_log.jsonl`, `guided_marks.jsonl`, `events.jsonl`.
-- The "hybrid" loader (IK to a hover above the part, then a policy for the last centimetres, as in Max's
-  sponge_pick project) is not written yet.
-- Policy loader mode is only tested offline with dummy commands, never with a real policy.
+- **Unload by robot.** It is the step we are training now. The hybrid (taught approach + policy) and the taught
+  sweep-and-grasp are in place, and every teleoperated hand-over becomes a new training episode.
+- **Every hole within 3 mm.** A lid-height calibration and more marks per hole for the per-position learned
+  correction.
+- **Wrist camera** for the last centimetre, and for following a part that moves while the arm works on it.
+- **Hand and unknown-object detection** in vision, next to Claude's own check of the images.
+- **Tag successful attempts directly in NormFS**, instead of cutting time ranges from the recording.
