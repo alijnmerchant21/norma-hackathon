@@ -1,0 +1,136 @@
+# Guided cell: joins three code drops into one system.
+#   cellbot      (Ali)    guardrails, Station I/O, MCP tools, e-stop
+#   vision.py    (Manasa) red box + holes + tracker
+#   elrobot_ik   (Max)    kinematics, camera<->table calibration
+# Paths may be absolute, start with ~, or be relative to this file.
+
+[paths]
+cellbot_dir    = "third_party/cellbot"
+elrobot_ik_dir = "../elrobot_ik"
+vision_file    = "third_party/vision/vision.py"
+# Camera<->robot calibration made by elrobot_ik/calibrate_table.py. Best accuracy: a second calibration
+# touched at LID height (markers on a block as tall as the part), saved under another name and set here.
+calib_file     = "../elrobot_ik/table_calib.json"
+# Constant aim correction taught with elrobot_ik/aim.py or hover.py (optional, "" = none).
+aim_file       = "../elrobot_ik/aim.json"
+
+[vision]
+# Three kinds of source (all must be the same camera and resolution as the calibration image):
+# "camera:2"         = RECOMMENDED: this process opens camera index 2 itself and runs Manasa's detector + tracker
+#                      on every frame; no separate server. The standalone vision server must NOT run on the same
+#                      camera at the same time. Try it for one run with: python -m cellguide.cli --source camera:2
+# "http://host:port" = Manasa's server (python vision.py --camera N --serve 8765 --no-window), same camera and
+#                      resolution as the calibration image.
+# "station:cam2"     = frames from Station through cellbot (only if they are the uncropped calibration image).
+source = "camera:auto"      # the camera that looks like the top view (macOS renumbers cameras when one drops out or returns); or "camera:N"
+top_reference = "top_ref.jpg"   # camera:auto: picture of the top view (relative to this file)
+auto_fallback = true            # camera:N delivering no frames, the wrong size or not the top view -> try camera:auto
+# source = "http://127.0.0.1:8765"
+width = 1280                 # camera:N only: requested capture size; a different aspect ratio is refused
+height = 720
+view_port = 8765             # camera:N only: viewer at http://<this machine>:8765/frame.jpg /raw.jpg /state (0 = off)
+max_state_age_s = 0.7        # older vision data is treated as "vision stalled"
+live_wait_s = 4.0            # how long to wait for a clear, live view before giving up
+# true only when a camera can see the part while the arm works on it (e.g. a wrist camera). With the top camera
+# alone the arm hides and distorts the part: false = aim from a look taken with the arm at a clear pose
+# (home/look), no following while hovering, vision events while the arm is over the part are ignored.
+sees_under_arm = false
+
+[tool]
+# Pen tip in the gripper frame (metres). Empty = state/pen_tip.json from `python -m cellguide.teach_tool`,
+# and if that does not exist either, the closed fingertips from elrobot_ik/tool_offset.json.
+tip_local_m = [0.0079, 0.1298, -0.0116]   # marker: closed fingertips (0.0918) + 38 mm stick-out along the fingers; set back to [] when the marker is removed
+# Close the elrobot gripper (cellbot's guarded gripper command) before guided motion: closed fingertips = tool.
+close_gripper = true
+
+[part]
+# Height of the part's top face above the calibrated plane, mm. 0 if calib_file was touched at lid height.
+surface_height_mm = 40.0
+# Parallax correction for a table-level calibration (0 = off): camera lens height above the table in mm and
+# the pixel straight below the lens ([] = image centre). Not needed with a lid-height calibration.
+camera_height_mm = 0.0
+camera_nadir_px = []
+
+[motion]
+arm = "elrobot"
+hover_mm = 40.0              # tip height above the part top while aiming
+high_mm = 110.0              # travel height above the part top
+clearance_mm = 25.0          # the tip never travels lower than this above the part top (except straight down)
+touch_mm = 2.0              # FIRST TOUCH TESTS: stops 10 mm above the part top. Lower step by step to 0 (negative presses in)
+dwell_s = 1.5                # FIRST TOUCH TESTS: stays down 6 s so you can look. Normal value 0.4
+ik_tol_mm = 3.0              # a target the arm cannot reach this precisely is refused
+workspace_margin_mm = 30.0   # how far outside the calibrated markers a target may be
+reaim_mm = 3.0               # the part moved more than this while hovering -> aim again
+max_reaim_mm = 80.0          # a bigger jump in one re-aim is not chased: lift and fail ("look again")
+max_reaims = 6               # re-aims per step; beyond that the step fails
+aim_frames = 3               # aim on the median target pixel of this many live vision states (max 1 s)
+follow_s = 8.0               # give up following a part that keeps moving after this long
+commit_age_s = 8.0           # sees_under_arm = true only: touch only if the part was SEEN at most this long ago
+sight_max_age_s = 60.0       # sees_under_arm = false: a clear look older than this is not reused; retreat and look again
+look_pose = "look"           # taught pose (cellbot.teach) where the arm is out of the camera's view; else home
+settle_rounds = 4            # gravity-droop correction rounds after each move (0 = off)
+settle_max_deg = 6.0         # cap of the learned droop offset per joint; every guided goal is sent as q + offset
+settle_tol_mm = 1.5          # hover: closed loop on the measured tip (FK of joint feedback) until its height is within this
+pretouch_tol_mm = 1.5        # pre-touch loop aims within this (accepts touch_tol_mm when no further round is possible)
+pretouch_xy_tol_mm = 1.0     # pre-touch loop also corrects the in-plane tip error (FK of joint feedback) to within this; residual only reported, never a failure
+touch_sag_abort_mm = 10.0    # tip measured more than this below the commanded touch height -> lift at once, step fails
+touch_tol_mm = 3.5           # closed loop at the touch: correct the joint goal (FK of joint feedback) until the tip height is within this
+touch_correct_rounds = 6     # at most this many correction rounds at the touch; not within touch_tol_mm then -> lift, step fails
+touch_correct_max_deg = 5.0  # each joint moves at most this far from the descent goal during the touch correction
+touch_cmd_below_mm = 3.0     # the COMMANDED tip (FK of the goal sent) is never below the touch height minus this
+pretouch_mm = 16.0           # dab: the height/xy correction runs this far above the part (out of contact), then one short straight descent to touch_mm; must be > touch_mm
+all_slow = true              # every guided move at cellbot's slow_speed (first runs on hardware); false = normal speed
+
+[loader]
+# The SO-101 moves the part pickup -> work area (load_part) and work area -> drop-off (unload_part).
+# Both refuse unless the worker arm is at a clear pose.
+arm = "so101"
+mode = "policy"        # "taught" | "policy" | "human"
+#   taught: cellbot's taught poses pick_hover, pick, place_hover, place, drop_hover, drop, home (all guards apply)
+#   policy: the commands below write to Station DIRECTLY, outside cellbot's guards. Safety is by turns only:
+#           the so101 zone is "unknown" from start until go_home succeeds, so the worker cannot move meanwhile.
+#   human:  no motion; a human places / removes the part, new_part and see_part verify.
+# policy mode: commands run by the loader tool, one per phase. {task} is replaced by the sentence below.
+policy_load_cmd = "/Users/MXH37/Documents/dev/lerobot/robot-pizza-cup/elrobot/norma-core/software/ai/smolvla_py/.venv/bin/python /Users/MXH37/Documents/dev/lerobot/guided_cell/policy_run.py --checkpoint /Users/MXH37/Documents/dev/lerobot/guided_cell/policies/load/final --task \"{task}\" --bus-serial 5B7B015823 --cameras 0,3 --execute 50 --max-seconds 90 --stop-when-still 6"   # e.g. "uv run python scripts/run_policy.py --checkpoint ... --task \"{task}\" --bus-serial 5B7B015823 --max-delta-ticks 512"
+policy_unload_cmd = "/Users/MXH37/Documents/dev/lerobot/robot-pizza-cup/elrobot/norma-core/software/ai/smolvla_py/.venv/bin/python /Users/MXH37/Documents/dev/lerobot/guided_cell/policy_run.py --checkpoint /Users/MXH37/Documents/dev/lerobot/guided_cell/policies/unload/final --task \"{task}\" --bus-serial 5B7B015823 --cameras 0,3 --execute 50 --max-seconds 60 --stop-when-still 6 --max-delta-ticks 500"
+# variant "fallback" (unload_part variant="fallback"): tried by the operator when the primary left the part in the work area
+policy_load_fallback_cmd = ""
+policy_unload_fallback_cmd = ""   # empty: the fallback = the taught steps below, then the primary policy command
+# fallback taught steps run FIRST (same syntax as *_pre_seq, NO home appended); with *_fallback_cmd = "" the fallback is then these steps + the primary policy_<phase>_cmd. [] = none.
+policy_load_fallback_pre_seq = []
+policy_unload_fallback_pre_seq = ["gripper:open", "pose:sweep_pre", "pose:sweep_start", "pose:grasp", "gripper:close"]
+policy_cwd = "/Users/MXH37/Documents/dev/lerobot/robot-pizza-cup/elrobot/norma-core/software/ai/smolvla_py"        # folder to run them in (norma-core/software/ai/smolvla_py)
+policy_load_task = "push the red box into the work area"
+policy_unload_task = "Move the red box from the work area to the drop-off area"
+policy_timeout_s = 150 # killed after this long (and at once if the e-stop latches)
+# hybrid (policy mode only): name of a taught so101 pose reached FIRST with cellbot's guarded slow motion, then the policy runs from there. "" = no pre-pose.
+policy_load_pre_pose = ""
+policy_unload_pre_pose = ""
+# hybrid (policy mode only): taught steps run FIRST (same syntax as taught_*_seq, NO home appended), then the policy; exclusive with *_pre_pose
+policy_load_pre_seq = []
+policy_unload_pre_seq = []
+# per phase: "" = use mode above. E.g. load by policy, unload by a taught sweep: unload_mode = "taught"
+load_mode = ""
+unload_mode = "taught"
+# taught mode: steps "pose:<name>" | "gripper:open" | "gripper:close" | "wait:<s>" (<= 5), home appended; [] = fixed pick/place
+taught_load_seq = []
+taught_unload_seq = ["gripper:open", "pose:sweep_pre", "pose:sweep_start", "pose:grasp", "gripper:close", "wait:1", "pose:sweep_pre", "pose:drop_pre", "pose:drop", "gripper:open", "wait:1", "pose:drop_pre"]   # fully taught unload: sweep, grasp, lift, carry, release; home is appended
+
+[marks]
+method = "diff"              # "color" = blue ink blobs; "diff" = new dark dots found by comparing the picture before and after the dabs (black marker)
+dark_save_images = true      # state/marks/<time>_<part>_{before,after,diff,result}
+dark_edge_margin_px = 14     # ignore new dark marks this close to the lid edge (side walls and shadows change as the box turns)
+dark_max_residual_px = 5.0   # inspection: accept the before/after picture alignment up to this residual (was 3.0; 3.4 px refused a run)
+# Ink colour of the dab in HSV (OpenCV H 0..180). Must differ from the part (red) and the holes (black).
+hsv_lo = [95, 90, 50]
+hsv_hi = [130, 255, 255]
+min_area_px = 12
+search_radius_mm = 12.0
+tolerance_mm = 3.0
+# Learned correction = -gain * (expected miss at that place), from the logged misses.
+gain = 0.8
+max_correction_mm = 12.0
+window = 40                  # how many recent marks the model uses
+local_scale_mm = 8.0         # the correction is local: marks within ~this distance (Gaussian length scale) dominate
+outlier_mm = 12.0            # a mark whose arm error is larger is logged but never used (e.g. assigned to the wrong hole)
+global_shrink = 0.5          # a new position with no marks near it gets this fraction of the shared mean error

@@ -1,0 +1,87 @@
+# Cell configuration for the guided marking cell.
+# All joint values are NORMALIZED: 0.0 = calibrated range_min, 1.0 = range_max
+# (the same convention as Station's normvla `position_norm`).
+
+[station]
+# "sim" = dry run, no hardware. "station" = real NormaCore Station over TCP.
+mode = "station"
+host = "100.91.159.106"          # teammate's Mac IP / Tailscale name when remote
+port = 8888                 # Station TCP API (web UI is 8889)
+# Path to a clone of github.com/norma-core/norma-core (needed for mode="station":
+# we import its station_py client and generated protobufs from there).
+norma_core_dir = "../norma-core"
+# Camera feed: one normvla inference queue (see README, station.yaml `inference:`).
+camera_queue = "inference/normvla"
+# Order of images inside a normvla Frame -> camera names.
+camera_names = ["top", "side"]
+# Camera used to measure marks.
+inspect_camera = "cam2"
+
+[guard]
+# Never command closer than this to either end of the calibrated arc.
+limit_margin = 0.03
+# Biggest change of any one joint allowed in a single move_joints call.
+# Taught (named) poses are trusted and skip this, but still pass every other check.
+max_delta_per_call = 0.15
+# Moves are split into waypoints no bigger than this, with checks between them.
+interp_step = 0.04
+# Servo speed/accel caps written to every move (ST3215 raw units).
+max_speed = 900
+max_accel = 40
+slow_speed = 300
+# If any motor's current goes above this during a move, freeze (raw ST3215 units).
+current_limit = 500
+# Joint must be within this of the goal to count as "reached".
+reach_tolerance = 0.02
+move_timeout_s = 8.0
+
+[arms.so101]
+role = "handler"                       # picks, places and removes the part
+bus_serial = "5B7B015823"                    # set the real serial when both buses are on one Station
+motor_ids = [1, 2, 3, 4, 5, 6]
+joint_names = ["shoulder_pan", "shoulder_lift", "elbow_flex", "wrist_flex", "wrist_roll", "gripper"]
+gripper = "gripper"
+gripper_open = 0.85                    # normalized gripper value for "open"
+gripper_closed = 0.10                  # normalized gripper value for fully closed
+home_pose = "home"
+# Optional tighter per-joint envelopes than the calibrated arc: name = [lo, hi]
+[arms.so101.envelope]
+shoulder_lift = [0.10, 0.90]
+
+[arms.elrobot]
+role = "marker"                        # holds the marker / screw tool
+bus_serial = "5B61034679"
+motor_ids = [1, 2, 3, 4, 5, 6, 7, 8]
+joint_names = ["j1", "j2", "j3", "j4", "j5", "j6", "j7", "gripper"]
+gripper = "gripper"
+gripper_open = 0.80
+gripper_closed = 0.15
+home_pose = "home"
+[arms.elrobot.envelope]
+
+[marking]
+# Pixel targets of the 4 spots in the inspect camera image, when the part sits in
+# the work-area fixture. (Replace with ArUco-relative targets once the jig exists.)
+spot_targets_px = { "1" = [200, 140], "2" = [280, 140], "3" = [280, 220], "4" = [200, 220] }
+mm_per_px = 0.5                        # inspect-camera scale on the work surface
+# A mark within this distance of its target passes.
+tolerance_mm = 2.0
+# ElRobot joints used to correct the mark position, and the initial guess of how
+# far the pen tip moves (mm, in camera x/y) per +1.0 normalized of each joint.
+# Refined online from observed misses (Broyden update).
+correction_joints = ["j1", "j3"]
+jacobian_mm = [[180.0, 0.0], [0.0, 160.0]]  # rows: x_mm, y_mm; cols: correction_joints
+dwell_s = 0.4                          # hold at touch pose
+# Learning: next correction = previous correction - gain * measured miss.
+learning_gain = 0.6
+max_correction_mm = 12.0
+blob_min_area_px = 6
+
+[sim]
+seed = 7
+# Fixed error of the "real" arm per spot in mm (what the learning loop must remove).
+bias_mm = { "1" = [3.0, -2.0], "2" = [3.5, -1.0], "3" = [2.5, -2.5], "4" = [4.0, -1.5] }
+noise_mm = 0.4
+# The true Jacobian differs from the configured guess, like a real arm would.
+jacobian_scale = [1.15, 0.85]
+grasp_fail_rate = 0.15

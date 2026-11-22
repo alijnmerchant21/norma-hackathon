@@ -1,0 +1,5 @@
+anthropic[mcp]>=2.12
+mcp
+numpy
+pillow
+opencv-python-headless

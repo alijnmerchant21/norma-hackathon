@@ -1,0 +1,184 @@
+{
+  "so101": {
+    "home": {
+      "joints": {
+        "shoulder_pan": 0.5,
+        "shoulder_lift": 0.2,
+        "elbow_flex": 0.8,
+        "wrist_flex": 0.5,
+        "wrist_roll": 0.5
+      },
+      "zone": "clear"
+    },
+    "pick_hover": {
+      "joints": {
+        "shoulder_pan": 0.25,
+        "shoulder_lift": 0.4,
+        "elbow_flex": 0.6,
+        "wrist_flex": 0.45,
+        "wrist_roll": 0.5
+      },
+      "zone": "clear"
+    },
+    "pick": {
+      "joints": {
+        "shoulder_pan": 0.25,
+        "shoulder_lift": 0.55,
+        "elbow_flex": 0.5,
+        "wrist_flex": 0.4,
+        "wrist_roll": 0.5
+      },
+      "zone": "clear"
+    },
+    "place_hover": {
+      "joints": {
+        "shoulder_pan": 0.55,
+        "shoulder_lift": 0.4,
+        "elbow_flex": 0.6,
+        "wrist_flex": 0.45,
+        "wrist_roll": 0.5
+      },
+      "zone": "work"
+    },
+    "place": {
+      "joints": {
+        "shoulder_pan": 0.55,
+        "shoulder_lift": 0.55,
+        "elbow_flex": 0.5,
+        "wrist_flex": 0.4,
+        "wrist_roll": 0.5
+      },
+      "zone": "work"
+    },
+    "drop_hover": {
+      "joints": {
+        "shoulder_pan": 0.8,
+        "shoulder_lift": 0.4,
+        "elbow_flex": 0.6,
+        "wrist_flex": 0.45,
+        "wrist_roll": 0.5
+      },
+      "zone": "clear"
+    },
+    "drop": {
+      "joints": {
+        "shoulder_pan": 0.8,
+        "shoulder_lift": 0.52,
+        "elbow_flex": 0.52,
+        "wrist_flex": 0.42,
+        "wrist_roll": 0.5
+      },
+      "zone": "clear"
+    }
+  },
+  "elrobot": {
+    "home": {
+      "joints": {
+        "j1": 0.5,
+        "j2": 0.25,
+        "j3": 0.75,
+        "j4": 0.5,
+        "j5": 0.5,
+        "j6": 0.5,
+        "j7": 0.5
+      },
+      "zone": "clear"
+    },
+    "mark_hover_1": {
+      "joints": {
+        "j1": 0.44,
+        "j2": 0.45,
+        "j3": 0.44,
+        "j4": 0.45,
+        "j5": 0.5,
+        "j6": 0.5,
+        "j7": 0.5
+      },
+      "zone": "work"
+    },
+    "mark_touch_1": {
+      "joints": {
+        "j1": 0.44,
+        "j2": 0.55,
+        "j3": 0.44,
+        "j4": 0.4,
+        "j5": 0.5,
+        "j6": 0.5,
+        "j7": 0.5
+      },
+      "zone": "work"
+    },
+    "mark_hover_2": {
+      "joints": {
+        "j1": 0.56,
+        "j2": 0.45,
+        "j3": 0.44,
+        "j4": 0.45,
+        "j5": 0.5,
+        "j6": 0.5,
+        "j7": 0.5
+      },
+      "zone": "work"
+    },
+    "mark_touch_2": {
+      "joints": {
+        "j1": 0.56,
+        "j2": 0.55,
+        "j3": 0.44,
+        "j4": 0.4,
+        "j5": 0.5,
+        "j6": 0.5,
+        "j7": 0.5
+      },
+      "zone": "work"
+    },
+    "mark_hover_3": {
+      "joints": {
+        "j1": 0.56,
+        "j2": 0.45,
+        "j3": 0.56,
+        "j4": 0.45,
+        "j5": 0.5,
+        "j6": 0.5,
+        "j7": 0.5
+      },
+      "zone": "work"
+    },
+    "mark_touch_3": {
+      "joints": {
+        "j1": 0.56,
+        "j2": 0.55,
+        "j3": 0.56,
+        "j4": 0.4,
+        "j5": 0.5,
+        "j6": 0.5,
+        "j7": 0.5
+      },
+      "zone": "work"
+    },
+    "mark_hover_4": {
+      "joints": {
+        "j1": 0.44,
+        "j2": 0.45,
+        "j3": 0.56,
+        "j4": 0.45,
+        "j5": 0.5,
+        "j6": 0.5,
+        "j7": 0.5
+      },
+      "zone": "work"
+    },
+    "mark_touch_4": {
+      "joints": {
+        "j1": 0.44,
+        "j2": 0.55,
+        "j3": 0.56,
+        "j4": 0.4,
+        "j5": 0.5,
+        "j6": 0.5,
+        "j7": 0.5
+      },
+      "zone": "work"
+    }
+  }
+}

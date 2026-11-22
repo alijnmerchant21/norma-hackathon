@@ -1,0 +1,58 @@
+{
+  "elrobot": {
+    "home": {
+      "joints": {
+        "j1": 0.6917,
+        "j2": 0.1174,
+        "j3": 0.6298,
+        "j4": 0.6644,
+        "j5": 0.4443,
+        "j6": 0.6844,
+        "j7": 0.6009
+      },
+      "zone": "clear"
+    }
+  },
+  "so101": {
+    "home": {
+      "joints": {
+        "shoulder_pan": 0.5044,
+        "shoulder_lift": 0.2003,
+        "elbow_flex": 0.8456,
+        "wrist_flex": 0.8121,
+        "wrist_roll": 0.2345
+      },
+      "zone": "clear"
+    },
+    "sweep_pre": {
+      "joints": {
+        "shoulder_pan": 0.4613,
+        "shoulder_lift": 0.4139,
+        "elbow_flex": 0.6841,
+        "wrist_flex": 0.8703,
+        "wrist_roll": 0.4739
+      },
+      "zone": "work"
+    },
+    "sweep_start": {
+      "joints": {
+        "shoulder_pan": 0.4753,
+        "shoulder_lift": 0.5414,
+        "elbow_flex": 0.6535,
+        "wrist_flex": 0.8231,
+        "wrist_roll": 0.4752
+      },
+      "zone": "work"
+    },
+    "grasp": {
+      "joints": {
+        "shoulder_pan": 0.4928,
+        "shoulder_lift": 0.6697,
+        "elbow_flex": 0.4432,
+        "wrist_flex": 0.8231,
+        "wrist_roll": 0.4742
+      },
+      "zone": "work"
+    }
+  }
+}

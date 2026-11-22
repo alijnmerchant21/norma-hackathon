@@ -1,0 +1,19 @@
+{
+ "samples": [
+  {
+   "offset_m": [
+    0.0045,
+    0.0242,
+    0.0005
+   ],
+   "at_m": [
+    0.0798,
+    0.2748,
+    0.0569
+   ],
+   "height_above_part_mm": 4.0,
+   "t": 1795341562.730934,
+   "source": "marker dots measured in pictures: round 1 (10:53) 24 mm, round 2 (10:58) 5.6 mm, hole 0"
+  }
+ ]
+}
